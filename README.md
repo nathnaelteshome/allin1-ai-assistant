@@ -5,20 +5,24 @@ A web-based AI assistant that autonomously handles user queries by decomposing t
 ## Features
 
 - **Query Parsing**: Uses LLM to decompose natural language queries into executable subtasks
-- **Task Execution**: Calls external APIs (Skyscanner, SendGrid, Google Calendar, etc.) with specific payloads
+- **Pipedream-First Integration**: All external API calls go through Pipedream workflows for security and reliability
+- **Task Execution**: Calls external APIs (Skyscanner, SendGrid, Google Calendar, etc.) via Pipedream workflows
 - **Result Aggregation**: Combines API outputs to deliver comprehensive results
+- **Retry Logic**: Exponential backoff retry strategy for failed API calls
+- **Comprehensive Logging**: Firebase-based logging for monitoring and debugging
 - **Gamification**: Award badges and points for task completion
 - **Social Sharing**: Share task outcomes to X (Twitter) or email
-- **Multi-LLM Support**: Supports ChatGPT, Claude, and Gemini for query processing
 
 ## Supported Scenarios
 
-1. **Flight Booking** - Search and book flights via Skyscanner
-2. **Email Sending** - Draft and send emails via SendGrid
-3. **Meeting Scheduling** - Create calendar events via Google Calendar
-4. **Trip Planning** - Plan complete trips with flights, hotels, and activities
-5. **Food Ordering** - Order food via DoorDash
-6. **X (Twitter) Posting** - Create and post content to X
+All scenarios use **Pipedream workflows** for external API integration:
+
+1. **Flight Booking** - Search and book flights via Skyscanner (through Pipedream)
+2. **Email Sending** - Draft and send emails via SendGrid (through Pipedream)
+3. **Meeting Scheduling** - Create calendar events via Google Calendar (through Pipedream)
+4. **Trip Planning** - Plan complete trips with flights, hotels, and activities (through Pipedream)
+5. **Food Ordering** - Order food via DoorDash (through Pipedream)
+6. **X (Twitter) Posting** - Create and post content to X (through Pipedream)
 
 ## Project Structure
 
@@ -77,11 +81,23 @@ SECRET_KEY=your-secret-key
 DEBUG=True
 PORT=5000
 
-# LLM API Keys
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key
-GOOGLE_API_KEY=your-google-key
+# Firebase Configuration
+FIREBASE_SERVICE_ACCOUNT_KEY_PATH=./firebase-service-account-key.json
+FIREBASE_PROJECT_ID=allin1-ai-assistant-dev
 
+# Pipedream Configuration (ALL external APIs go through Pipedream)
+PIPEDREAM_API_KEY=your-pipedream-api-key
+PIPEDREAM_FLIGHT_SEARCH_URL=https://your-flight-trigger-id.m.pipedream.net
+PIPEDREAM_EMAIL_SEND_URL=https://your-email-trigger-id.m.pipedream.net
+PIPEDREAM_EMAIL_DRAFT_URL=https://your-email-draft-trigger-id.m.pipedream.net
+
+# Retry Configuration
+MAX_RETRIES=3
+INITIAL_RETRY_DELAY=1
+MAX_RETRY_DELAY=60
+```
+
+**Important**: External API keys (Skyscanner, SendGrid, etc.) are stored securely in Pipedream workflows, not in your application environment. This ensures better security and centralized API management.
 
 ## Usage
 
