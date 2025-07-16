@@ -82,16 +82,6 @@ OPENAI_API_KEY=your-openai-key
 ANTHROPIC_API_KEY=your-anthropic-key
 GOOGLE_API_KEY=your-google-key
 
-# External API Keys
-SKYSCANNER_API_KEY=your-skyscanner-key
-SENDGRID_API_KEY=your-sendgrid-key
-GOOGLE_CALENDAR_API_KEY=your-google-calendar-key
-DOORDASH_API_KEY=your-doordash-key
-TWITTER_API_KEY=your-twitter-key
-STRIPE_API_KEY=your-stripe-key
-BOOKING_API_KEY=your-booking-key
-TRIPADVISOR_API_KEY=your-tripadvisor-key
-```
 
 ## Usage
 
@@ -109,53 +99,6 @@ curl -X POST http://localhost:5000/tasks \
   -d '{"user_id": "user123", "query": "Book a flight to New York City next week"}'
 ```
 
-## API Endpoints
-
-### POST /tasks
-Process a user query and execute the corresponding task.
-
-**Request:**
-```json
-{
-  "user_id": "user123",
-  "query": "Book a flight to New York City next week",
-  "payload": {}
-}
-```
-
-**Response:**
-```json
-{
-  "status": "completed",
-  "results": [...],
-  "questions": [],
-  "task_id": "task_123",
-  "timestamp": "2025-07-16T10:30:00Z"
-}
-```
-
-### GET /badges/{user_id}
-Get user badges and points.
-
-**Response:**
-```json
-{
-  "user_id": "user123",
-  "badges": [...],
-  "total_points": 50,
-  "timestamp": "2025-07-16T10:30:00Z"
-}
-```
-
-### GET /health
-Health check endpoint.
-
-## Development
-
-### Running Tests
-```bash
-pytest tests/
-```
 
 ### Code Style
 ```bash
@@ -180,10 +123,3 @@ The application follows a clean architecture pattern:
 4. Add tests
 5. Submit a pull request
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-For questions or issues, please open an issue on GitHub or contact the development team.
