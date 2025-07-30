@@ -600,94 +600,41 @@ async def oauth_callback(
     state: Optional[str] = Query(None, description="OAuth state parameter"),
     app: Optional[str] = Query(None, description="App name"),
     error: Optional[str] = Query(None, description="OAuth error"),
-    interaction_id: Optional[str] = Query(None, description="Chat interaction ID for workflow integration"),
     controller: AuthController = Depends(get_auth_controller)
 ) -> Dict[str, Any]:
     """
-    Enhanced OAuth callback endpoint that handles redirects from external services.
+    OAuth callback endpoint that handles redirects from external services.
     
     This endpoint is called by external services after the user completes
-    the OAuth flow. It supports both traditional OAuth flows and chat workflow
-    integration through interaction_id parameter.
+    the OAuth flow. It extracts the authorization code and completes the
+    connection process.
     """
     try:
         if error:
             logger.error(f"OAuth error received: {error}")
-            
-            # If this is part of a chat workflow, we need to handle it gracefully
-            if interaction_id:
-                return {
-                    "status": "oauth_failed",
-                    "message": f"Authentication failed: {error}",
-                    "interaction_id": interaction_id,
-                    "redirect_type": "chat_error",
-                    "redirect_url": f"/chat?error=oauth_failed&message={error}&interaction_id={interaction_id}"
-                }
-            
             raise HTTPException(
                 status_code=400,
                 detail=f"OAuth authorization failed: {error}"
             )
         
         if not code:
-            error_msg = "Authorization code is required"
-            logger.warning(error_msg)
-            
-            if interaction_id:
-                return {
-                    "status": "oauth_failed",
-                    "message": error_msg,
-                    "interaction_id": interaction_id,
-                    "redirect_type": "chat_error",
-                    "redirect_url": f"/chat?error=missing_code&interaction_id={interaction_id}"
-                }
-            
             raise HTTPException(
                 status_code=400,
-                detail=error_msg
+                detail="Authorization code is required"
             )
         
-        logger.info(f"Processing OAuth callback for app: {app}, state: {state}, interaction_id: {interaction_id}")
+        logger.info(f"Processing OAuth callback for app: {app}, state: {state}")
         
-        # Handle chat workflow integration
-        if interaction_id:
-            try:
-                # Complete OAuth and continue chat workflow automatically
-                # This assumes the chat service is available globally (will be injected in main app)
-                
-                # For now, return success info for chat interface to handle
-                return {
-                    "status": "oauth_completed",
-                    "message": f"Successfully connected to {app}! Continuing with your request...",
-                    "auth_code": code,
-                    "app": app,
-                    "state": state,
-                    "interaction_id": interaction_id,
-                    "redirect_type": "chat_success",
-                    "redirect_url": f"/chat?oauth_success=true&app={app}&interaction_id={interaction_id}&auth_code={code}",
-                    "auto_continue": True
-                }
-                
-            except Exception as chat_error:
-                logger.error(f"Error handling chat OAuth callback: {str(chat_error)}")
-                return {
-                    "status": "oauth_completed_with_error",
-                    "message": f"Authentication successful but encountered an error continuing the workflow: {str(chat_error)}",
-                    "auth_code": code,
-                    "app": app,
-                    "interaction_id": interaction_id,
-                    "redirect_type": "chat_error",
-                    "redirect_url": f"/chat?oauth_error=workflow_continuation&interaction_id={interaction_id}"
-                }
+        # For now, return the auth code and let the frontend handle completion
+        # In a full implementation, you'd use the state parameter to find
+        # the corresponding OAuth session and complete it automatically
         
-        # Traditional OAuth flow (non-chat)
         return {
             "status": "callback_received",
             "message": "OAuth callback processed successfully",
             "auth_code": code,
             "app": app,
             "state": state,
-            "redirect_type": "traditional",
             "next_step": "Use the auth_code with POST /auth/connect/{session_id}/complete to complete the connection"
         }
         

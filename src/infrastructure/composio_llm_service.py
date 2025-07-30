@@ -189,9 +189,8 @@ class ComposioLLMService:
             param_info = {}
             
             for param_name, param_details in params.items():
-
-                param_type = param_details.get('type', 'unknown')
-                param_desc = param_details.get('description', 'No description')
+                param_type = getattr(param_details, 'type', 'string')
+                param_desc = getattr(param_details, 'description', 'No description')
                 param_info[param_name] = {"type": param_type, "description": param_desc}
             
             logger.debug(f"Schema parameters: {list(param_info.keys())}")

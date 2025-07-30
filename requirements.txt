@@ -86,10 +86,6 @@ aiofiles==23.2.1
 python-multipart==0.0.6
 psutil==5.9.5
 
-# JWT Authentication
-PyJWT==2.8.0
-passlib[bcrypt]==1.7.4
-
 # Legacy Flask dependencies (for backward compatibility)
 Flask==2.3.3
 Flask-CORS==4.0.0

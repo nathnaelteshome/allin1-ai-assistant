@@ -19,14 +19,10 @@ from .infrastructure.composio_tool_discovery import ComposioToolDiscovery
 from .infrastructure.composio_function_executor import ComposioFunctionExecutor
 from .infrastructure.gemini_service import GeminiService
 from .infrastructure.firebase_service import FirebaseService
-from .infrastructure.jwt_auth_service import JWTAuthService
-from .infrastructure.chat_service import ChatService
-from .infrastructure.chat_error_handler import ChatErrorHandler
 from .use_cases.composio_planner_agent import ComposioPlannerAgent
 from .controllers.composio_task_controller import ComposioTaskController
 from .controllers.auth_controller import AuthController
 from .controllers.health_controller import HealthController
-from .controllers.chat_controller import ChatController
 
 # Configure logging
 logging.basicConfig(
@@ -35,8 +31,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Import authentication middleware
-from .infrastructure.auth_middleware import get_current_user, UserContext
+# Security
+security = HTTPBearer()
 
 # Global service instances
 services = {}
@@ -83,16 +79,6 @@ async def lifespan(app: FastAPI):
         )
         services['planner_agent'] = planner_agent
         
-        # Initialize JWT authentication service
-        jwt_auth_service = JWTAuthService()
-        services['jwt_auth'] = jwt_auth_service
-        
-        # Initialize chat service
-        chat_service = ChatService(
-            planner_agent, function_executor, tool_discovery, auth_manager
-        )
-        services['chat_service'] = chat_service
-        
         # Initialize controllers
         services['task_controller'] = ComposioTaskController(
             planner_agent, function_executor, tool_discovery, auth_manager
@@ -101,7 +87,6 @@ async def lifespan(app: FastAPI):
         services['health_controller'] = HealthController(
             gemini_service, composio_service, planner_agent
         )
-        services['chat_controller'] = ChatController(chat_service)
         
         # Perform health checks
         await perform_startup_health_checks()
@@ -165,9 +150,6 @@ async def cleanup_task():
             
             # Clean up expired OAuth sessions
             await services['auth_manager'].cleanup_expired_sessions()
-            
-            # Clean up expired chat sessions and interactions
-            await services['chat_service'].cleanup_expired_sessions()
             
             # Wait for 1 hour before next cleanup
             await asyncio.sleep(3600)
@@ -238,37 +220,26 @@ async def get_health_controller() -> HealthController:
     return services['health_controller']
 
 
-async def get_jwt_auth_service() -> JWTAuthService:
-    return services['jwt_auth']
+# Simple authentication dependency (to be enhanced)
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """
+    Simple authentication dependency. 
+    In production, this should validate JWT tokens and return user info.
+    """
+    # For now, return a simple use havr ID extracted from token
+    # This should be replaced with proper JWT validation
+    token = credentials.credentials
+    
+    # Simple validation - in production, use proper JWT validation
+    if token.startswith("user_"):
+        return token
+    else:
+        raise HTTPException(status_code=401, detail="Invalid authentication token")
 
 
-async def get_chat_service() -> ChatService:
-    return services['chat_service']
-
-
-async def get_chat_controller() -> ChatController:
-    return services['chat_controller']
-
-
-# JWT authentication is now handled by auth_middleware.get_current_user
-
-
-# Enhanced exception handlers with chat support
-from .infrastructure.chat_error_handler import ChatException
-
-@app.exception_handler(ChatException)
-async def chat_exception_handler(request, exc):
-    """Handle chat-specific exceptions with user-friendly messages."""
-    return await ChatErrorHandler.global_chat_exception_handler(request, exc)
-
-
+# Exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
-    # Check if this is a chat-related request for enhanced error handling
-    if request.url.path.startswith("/api/v1/chat"):
-        return await ChatErrorHandler.global_chat_exception_handler(request, exc)
-    
-    # Standard HTTP exception handling for non-chat requests
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -282,12 +253,6 @@ async def http_exception_handler(request, exc):
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     logger.error(f"Unhandled exception: {str(exc)}")
-    
-    # Enhanced error handling for chat requests
-    if request.url.path.startswith("/api/v1/chat"):
-        return await ChatErrorHandler.global_chat_exception_handler(request, exc)
-    
-    # Standard error handling for non-chat requests
     return JSONResponse(
         status_code=500,
         content={
@@ -313,18 +278,15 @@ async def health_check():
 from .controllers.composio_task_controller import router as task_router, get_task_controller
 from .controllers.auth_controller import router as auth_router, get_auth_controller
 from .controllers.health_controller import router as health_router, get_health_controller
-from .controllers.chat_controller import router as chat_router, get_chat_controller
 
 # Override dependency injection for controllers
 app.dependency_overrides[get_auth_controller] = lambda: services['auth_controller']
 app.dependency_overrides[get_task_controller] = lambda: services['task_controller']
 app.dependency_overrides[get_health_controller] = lambda: services['health_controller']
-app.dependency_overrides[get_chat_controller] = lambda: services['chat_controller']
 
 app.include_router(task_router, prefix="/api/v1", tags=["tasks"])
 app.include_router(auth_router, prefix="/api/v1", tags=["authentication"])
 app.include_router(health_router, prefix="/api/v1", tags=["health"])
-app.include_router(chat_router, prefix="/api/v1", tags=["chat"])
 
 
 # Root endpoint
@@ -334,21 +296,10 @@ async def root():
     return {
         "name": "Allin1 AI Assistant",
         "version": "1.0.0",
-        "description": "AI-powered assistant with unified tool execution and conversational chat interface",
+        "description": "AI-powered assistant with unified tool execution",
         "documentation": "/docs",
         "health": "/health",
-        "api_prefix": "/api/v1",
-        "features": {
-            "chat_interface": "/api/v1/chat/messages",
-            "workflow_execution": "/api/v1/tasks/execute",
-            "oauth_authentication": "/api/v1/auth/connect",
-            "supported_apps": ["Gmail", "GitHub", "Slack", "Calendar", "Twitter", "Zoom"]
-        },
-        "getting_started": {
-            "chat": "Send natural language requests to /api/v1/chat/messages",
-            "auth": "JWT token required in Authorization header",
-            "example": "Send an email to john@example.com saying hello"
-        }
+        "api_prefix": "/api/v1"
     }
 
 
