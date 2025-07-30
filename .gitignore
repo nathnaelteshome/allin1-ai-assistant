@@ -1,5 +1,6 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
+CLAUDE.md
 *.py[cod]
 *$py.class
 
@@ -150,6 +151,7 @@ dmypy.json
 .Trashes
 ehthumbs.db
 Thumbs.db
+
 
 # Project specific
 *.log
