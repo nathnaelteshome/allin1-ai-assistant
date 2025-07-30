@@ -117,6 +117,8 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
+# Personal docs
+
 # mkdocs documentation
 /site
 
@@ -129,8 +131,8 @@ dmypy.json
 .pyre/
 
 # Personal
-personal_docs/
-CLAUDE.md
+# personal_docs/
+# CLAUDE.md
 
 
 # IDE
@@ -154,3 +156,6 @@ Thumbs.db
 config.json
 secrets.json
 api_keys.env
+.claude/
+.vscode/
+CLAUDE.md
